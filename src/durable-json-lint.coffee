@@ -16,6 +16,8 @@ jsonLint=(src)->
             description:desc
             status:status
         })
+        if node.loc.start.line == 1 
+            errors[errors.length-1].column -= 19
 
     rootExpr = null
     breadthFirstFunc=(node)->

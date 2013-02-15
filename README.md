@@ -12,7 +12,7 @@ _________________________
 _________________________
 ```javascript
 durableJsonLint = require('durable-json-lint');
-console.log(durableJsonLint('{name:"value", 'array':[call(), 0x11]}'))
+console.log(durableJsonLint('{name:"value", \'array\':[call(), 0x11]}'))
 /* The above code would print the following to the console
 
 */
