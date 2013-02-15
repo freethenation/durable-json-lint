@@ -13,9 +13,32 @@ _________________________
 ```javascript
 durableJsonLint = require('durable-json-lint');
 console.log(durableJsonLint('{name:"value", \'array\':[call(), 0x11]}'))
-/* The above code would print the following to the console
-
-*/
+// The above code would print the following to the console
+{
+   "json":'{"name":"value", "array":[null, 17]}',
+   "errors":[{
+         "column":1,
+         "description":"Keys must be double quoted in Json. Did you mean \"name\"?",
+         "lineNumber":1,
+         "status":"correctable"
+      },{
+         "column":15,
+         "description":"Json strings must use double quotes",
+         "lineNumber":1,
+         "status":"correctable"
+      },{
+         "column":24,
+         "description":"You can not make function calls in Json. Do you think I am a fool?",
+         "lineNumber":1,
+         "status":"fail"
+      },{
+         "column":32,
+         "description":"Invalid Json number",
+         "lineNumber":1,
+         "status":"correctable"
+      }
+   ]
+}
 ```
 
 Durable Json Lint runs in the browser too! You can checkout the example above at JS Bin here.
