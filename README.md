@@ -41,7 +41,7 @@ console.log(durableJsonLint('{name:"value", \'array\':[call(), 0x11]}'))
 }
 ```
 
-Durable Json Lint runs in the browser too! You can checkout the example above at JS Bin here.
+Durable Json Lint runs in the browser too! You can checkout the example above at [JS Bin](http://jsbin.com/ojeyup/2/edit).
 
 # Api
 __________________________
