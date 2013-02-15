@@ -5,7 +5,8 @@ jsonLint=(src)->
     try
         ast = esprima.parse(wrappedSrc, {range:true, tolerant:true, loc:true, raw:true})
     catch err
-        return {errors:[err]}
+        err.status = "crash"
+        return {errors:[err],json:null}
     #^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\/bfnrt])|(?:\\u[][0-9a-f]{4}))*")$
     literalRegex = /^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\\/bfnrt])|(?:\\u[\][0-9a-f]{4}))*")$/
     errors = []
