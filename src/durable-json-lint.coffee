@@ -9,6 +9,7 @@ jsonLint=(src)->
         return {errors:[err],json:null}
     #^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\/bfnrt])|(?:\\u[][0-9a-f]{4}))*")$
     literalRegex = /^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\\/bfnrt])|(?:\\u[\][0-9a-f]{4}))*")$/
+    commaFixRegex = /,(?=\s*\}\s*$)/
     errors = []
     createError=(node, status, desc)->
         errors.push({            
@@ -41,7 +42,10 @@ jsonLint=(src)->
                         when "\"" then createError(node, "correctable", "Invalid Json string")
                         else createError(node, "correctable", "Invalid Json number")
                     node.correct = JSON.stringify(node.value)
-            when "ObjectExpression", "ArrayExpression"
+            when "ObjectExpression"
+                node.valid=true
+                node.props={}
+            when "ArrayExpression"
                 node.valid=true
             when "Property"
                 node.valid=true
@@ -55,7 +59,7 @@ jsonLint=(src)->
                     key.valid=false
                     key.correct = JSON.stringify(key.raw)
             when "Identifier"
-                node.valid=false
+                node.valid = false
                 createError(node, "guessable", "An identifier is not a valid Json element. Did you mean \"#{node.name}\"?")
                 node.correct = JSON.stringify(node.name)
             when "CallExpression"
@@ -66,12 +70,21 @@ jsonLint=(src)->
                 createError(node, "fail", "A \"#{node.type}\" is an invalid Json element.")
 
     depthFirstFunc=(node)->
+        #test for duplicate keys
+        if node.type == "Property"
+            key = node.key
+            if node.parent.props[key.correct||key.raw]?
+                node.valid=false    
+                node.correct = ""
+                createError(node, "guessable", "Duplicate key in Json object. The key \"#{key.correct||key.raw}\" is already present.")
+            else node.parent.props[key.correct||key.raw] = node
+        #fix trailing comma issue in objects
+        if node.type == "ObjectExpression"
+            node.update(node.source().replace(commaFixRegex,""))
+        # basic results
         if node.valid then return #its good do nothing
         else if node.correct? #correct it if we can
             node.update(node.correct)
-        #else if node.type == "ArrayExpression"
-        #    elements = (ele.source() for ele in node.elements when ele.valid || ele.correct)
-        #    node.update("[" + elements.join(",") + "]")
         else
             node.update("null")
         return
