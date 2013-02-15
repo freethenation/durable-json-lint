@@ -1,6 +1,6 @@
 {
   "name": "durable-json-lint",
-  "description": "An Efficient  Javascript Unification Library",
+  "description": "A Json Lint library that can parse and partially correct dirty Json.",
   "homepage": "https://github.com/freethenation/durable-json-lint",
   "repository":{
         "type": "git"
@@ -23,5 +23,8 @@
   "main":"index",
   "engines":{"node":">= 0.4.0"},
   "author": "Richard Klafter <rpklafter@yahoo.com>",
-  "keywords":["unify","unification","pattern","matching","json","validation","transformation","coffeescript"]
+  "scripts": {
+      "test":"cake -e build:full" 
+  },
+  "keywords":["json","lint","durable","validation","coffeescript"]
 }
