@@ -1,6 +1,6 @@
 # Durable Json Lint
 _________________________
-Durable Json Lint is a Json Lint library that can parse and partially correct dirty Json. Unlike most Json lint libraries it does its best not crash after encountering simple errors. It can be installed via npm using the command `npm install durable-json-lint`.
+Durable Json Lint is a Json Lint library that can parse and partially correct dirty Json. Unlike most Json lint libraries it does its best not to crash after encountering errors. It can be installed via npm using the command `npm install durable-json-lint`.
 
 # Features
 _________________________
@@ -11,7 +11,11 @@ _________________________
 # Usage
 _________________________
 ```javascript
-f
+durableJsonLint = require('durable-json-lint');
+console.log(durableJsonLint('{name:"value", 'array':[call(), 0x11]}'))
+/* The above code would print the following to the console
+
+*/
 ```
 
 Durable Json Lint runs in the browser too! You can checkout the example above at JS Bin here.

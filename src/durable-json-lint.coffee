@@ -9,11 +9,12 @@ jsonLint=(src)->
     #^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\/bfnrt])|(?:\\u[][0-9a-f]{4}))*")$
     literalRegex = /^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\\/bfnrt])|(?:\\u[\][0-9a-f]{4}))*")$/
     errors = []
-    createError=(node, desc)->
+    createError=(node, status, desc)->
         errors.push({            
             lineNumber: node.loc.start.line,
             column: node.loc.start.column,
             description:desc
+            status:status
         })
 
     rootExpr = null
@@ -33,9 +34,9 @@ jsonLint=(src)->
                 else
                     node.valid=false
                     switch node.raw[0]
-                        when "'" then createError(node, "Json strings must use double quotes")
-                        when "\"" then createError(node, "Invalid Json string")
-                        else createError(node, "Invalid Json number")
+                        when "'" then createError(node, "correctable", "Json strings must use double quotes")
+                        when "\"" then createError(node, "correctable", "Invalid Json string")
+                        else createError(node, "correctable", "Invalid Json number")
                     node.correct = JSON.stringify(node.value)
             when "ObjectExpression", "ArrayExpression"
                 node.valid=true
@@ -43,23 +44,23 @@ jsonLint=(src)->
                 node.valid=true
                 key = node.key
                 if key.type=="Identifier"
-                    createError(key, "Keys must be double quoted in Json. Did you mean \"#{key.name}\"?")
+                    createError(key, "correctable", "Keys must be double quoted in Json. Did you mean \"#{key.name}\"?")
                     key.valid=false
                     key.correct = JSON.stringify(key.name)
                 else if key.type=="Literal" and typeof(key.value) == "number"
-                    createError(key, "Keys must be double quoted in Json. Did you mean \"#{key.raw}\"?")
+                    createError(key, "correctable", "Keys must be double quoted in Json. Did you mean \"#{key.raw}\"?")
                     key.valid=false
                     key.correct = JSON.stringify(key.raw)
             when "Identifier"
                 node.valid=false
-                createError(node, "An identifier is not a valid Json element. Did you mean \"#{node.name}\"?")
+                createError(node, "guessable", "An identifier is not a valid Json element. Did you mean \"#{node.name}\"?")
                 node.correct = JSON.stringify(node.name)
             when "CallExpression"
                 node.valid=false
-                createError(node, "You can not make function calls in Json. Do you think I am a fool?")
+                createError(node, "fail", "You can not make function calls in Json. Do you think I am a fool?")
             else
                 node.valid=false
-                createError(node, "A \"#{node.type}\" is an invalid Json element.")
+                createError(node, "fail", "A \"#{node.type}\" is an invalid Json element.")
 
     depthFirstFunc=(node)->
         if node.valid then return #its good do nothing
@@ -77,4 +78,4 @@ jsonLint=(src)->
     res = res.substring(19,res.length-6)
     return {json:res, errors:errors}
 #export
-if typeof module == 'undefined' then window.betterJsonLint = jsonLint else module.exports = jsonLint
+if typeof module == 'undefined' then window.durableJsonLint = jsonLint else module.exports = jsonLint
