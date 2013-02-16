@@ -1,7 +1,7 @@
 esprima = if typeof module == 'undefined' then window.esprima else require('esprima')
 falafel = if typeof module == 'undefined' then window.falafel else require('free-falafel')
 jsonLint=(src)->
-    if !src or src == "" then return {json:null, errors:[{lineNumber:1,column:1,description:"An empty string is not valid Json",status:"crash"}]}
+    if !src or /^\s*$/.test(src) then return {json:null, errors:[{lineNumber:1,column:1,description:"An empty string is not valid Json",status:"crash"}]}
     wrappedSrc = "(function(){return "+src+";})();"
     errors = []
     try
@@ -47,6 +47,9 @@ jsonLint=(src)->
                         when "\"" then createError(node, "correctable", "Invalid Json string")
                         else createError(node, "correctable", "Invalid Json number")
                     node.correct = JSON.stringify(node.value)
+            when "UnaryExpression"
+                if node.operator == "-" and node.argument.type == "Literal"
+                    node.valid = true
             when "ObjectExpression"
                 node.valid=true
                 node.props={}
