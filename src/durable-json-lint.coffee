@@ -2,15 +2,16 @@ esprima = if typeof module == 'undefined' then window.esprima else require('espr
 falafel = if typeof module == 'undefined' then window.falafel else require('free-falafel')
 jsonLint=(src)->
     if !src or /^\s*$/.test(src) then return {json:null, errors:[{lineNumber:1,column:1,description:"An empty string is not valid Json",status:"crash"}]}
-    wrappedSrc = "(function(){return "+src+";})();"
+    wrappedSrc = "(function(){return "+src+";\n})();"
     errors = []
     try
         ast = esprima.parse(wrappedSrc, {range:true, tolerant:true, loc:true, raw:true})
     catch err
         err.status = "crash"
-        if err.index >= wrappedSrc.length-6
-            err.column -= 6
-            err.description = "Invalid Json did you forget a '}'?"
+        if err.index >= wrappedSrc.length-7
+            if err.lineNumber >= wrappedSrc.match(/\r\n?|\n/g).length+1 then err.lineNumber--
+            err.column = 1
+            err.description = "Invalid Json. Did you forget to a close bracket?"
         errors.push(err)
         return {errors:errors,json:null}
     #^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\/bfnrt])|(?:\\u[][0-9a-f]{4}))*")$
@@ -99,7 +100,7 @@ jsonLint=(src)->
 
     # do the processing         
     res = falafel(wrappedSrc, {ast:ast}, depthFirstFunc, breadthFirstFunc).toString()
-    res = res.substring(19,res.length-6)
+    res = res.substring(19,res.length-7)
     return {json:res, errors:errors}
 #export
 if typeof module == 'undefined' then window.durableJsonLint = jsonLint else module.exports = jsonLint
