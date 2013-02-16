@@ -76,7 +76,7 @@ jsonLint=(src)->
             if node.parent.props[key.correct||key.raw]?
                 node.valid=false    
                 node.correct = ""
-                createError(node, "guessable", "Duplicate key in Json object. The key \"#{key.correct||key.raw}\" is already present.")
+                createError(node, "guessable", "Duplicate key in Json object. The key #{key.correct||key.raw} is already present.")
             else node.parent.props[key.correct||key.raw] = node
         #fix trailing comma issue in objects
         if node.type == "ObjectExpression"
