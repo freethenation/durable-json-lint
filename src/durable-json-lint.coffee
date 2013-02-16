@@ -1,16 +1,21 @@
 esprima = if typeof module == 'undefined' then window.esprima else require('esprima')
 falafel = if typeof module == 'undefined' then window.falafel else require('free-falafel')
 jsonLint=(src)->
+    if !src or src == "" then return {json:null, errors:[{lineNumber:1,column:1,description:"An empty string is not valid Json",status:"crash"}]}
     wrappedSrc = "(function(){return "+src+";})();"
+    errors = []
     try
         ast = esprima.parse(wrappedSrc, {range:true, tolerant:true, loc:true, raw:true})
     catch err
         err.status = "crash"
-        return {errors:[err],json:null}
+        if err.index >= wrappedSrc.length-6
+            err.column -= 6
+            err.description = "Invalid Json did you forget a '}'?"
+        errors.push(err)
+        return {errors:errors,json:null}
     #^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\/bfnrt])|(?:\\u[][0-9a-f]{4}))*")$
     literalRegex = /^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\\/bfnrt])|(?:\\u[\][0-9a-f]{4}))*")$/
-    commaFixRegex = /,(?=\s*\}\s*$)/
-    errors = []
+    commaFixRegex = /,(?=\s*[\]}]\s*$)/
     createError=(node, status, desc)->
         errors.push({            
             lineNumber: node.loc.start.line,
@@ -79,7 +84,7 @@ jsonLint=(src)->
                 createError(node, "guessable", "Duplicate key in Json object. The key #{key.correct||key.raw} is already present.")
             else node.parent.props[key.correct||key.raw] = node
         #fix trailing comma issue in objects
-        if node.type == "ObjectExpression"
+        if node.type == "ObjectExpression" || node.type == "ArrayExpression"
             node.update(node.source().replace(commaFixRegex,""))
         # basic results
         if node.valid then return #its good do nothing
