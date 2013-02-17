@@ -2,16 +2,16 @@ esprima = if typeof module == 'undefined' then window.esprima else require('espr
 falafel = if typeof module == 'undefined' then window.falafel else require('free-falafel')
 jsonLint=(src)->
     if !src or /^\s*$/.test(src) then return {json:null, errors:[{lineNumber:1,column:1,description:"An empty string is not valid Json",status:"crash"}]}
-    wrappedSrc = "(function(){return "+src+";\n})();"
+    wrappedSrc = "(function(){return "+src+'\n})();'
     errors = []
     try
-        ast = esprima.parse(wrappedSrc, {range:true, tolerant:true, loc:true, raw:true})
+        ast = esprima.parse(wrappedSrc, {range:true, tolerant:true, loc:true, raw:true, comment:true})
     catch err
         err.status = "crash"
         if err.index >= wrappedSrc.length-7
             if err.lineNumber >= wrappedSrc.match(/\r\n?|\n/g).length+1 then err.lineNumber--
             err.column = 1
-            err.description = "Invalid Json. Did you forget to a close bracket?"
+            err.description = "Invalid Json. Did you forget a close bracket?"
         errors.push(err)
         return {errors:errors,json:null}
     #^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\/bfnrt])|(?:\\u[][0-9a-f]{4}))*")$
@@ -26,7 +26,9 @@ jsonLint=(src)->
         })
         if node.loc.start.line == 1 
             errors[errors.length-1].column -= 19
-
+    #add all comments as errors
+    for comment in ast.comments
+        createError(comment, "correctable", "Comments are not valid in Json")
     rootExpr = null
     breadthFirstFunc=(node)->
         if rootExpr == null
@@ -61,19 +63,22 @@ jsonLint=(src)->
                 key = node.key
                 if key.type=="Identifier"
                     createError(key, "correctable", "Keys must be double quoted in Json. Did you mean \"#{key.name}\"?")
-                    key.valid=false
+                    key.valid = false
                     key.correct = JSON.stringify(key.name)
                 else if key.type=="Literal" and typeof(key.value) == "number"
                     createError(key, "correctable", "Keys must be double quoted in Json. Did you mean \"#{key.raw}\"?")
-                    key.valid=false
+                    key.valid = false
                     key.correct = JSON.stringify(key.raw)
             when "Identifier"
                 node.valid = false
                 createError(node, "guessable", "An identifier is not a valid Json element. Did you mean \"#{node.name}\"?")
                 node.correct = JSON.stringify(node.name)
             when "CallExpression"
-                node.valid=false
+                node.valid = false
                 createError(node, "fail", "You can not make function calls in Json. Do you think I am a fool?")
+            when "Line","Block" #Handle comments
+                node.valid = false
+                node.correct = ""
             else
                 node.valid=false
                 createError(node, "fail", "A \"#{node.type}\" is an invalid Json element.")
@@ -100,7 +105,7 @@ jsonLint=(src)->
 
     # do the processing         
     res = falafel(wrappedSrc, {ast:ast}, depthFirstFunc, breadthFirstFunc).toString()
-    res = res.substring(19,res.length-7)
+    res = res.substring(19,res.length-6)
     return {json:res, errors:errors}
 #export
 if typeof module == 'undefined' then window.durableJsonLint = jsonLint else module.exports = jsonLint
