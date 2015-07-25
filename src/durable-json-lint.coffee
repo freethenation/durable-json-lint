@@ -2,6 +2,7 @@ esprima = if typeof module == 'undefined' then window.esprima else require('espr
 falafel = if typeof module == 'undefined' then window.falafel else require('free-falafel')
 jsonLint=(src)->
     if !src or /^\s*$/.test(src) then return {json:null, errors:[{lineNumber:1,column:1,description:"An empty string is not valid Json",status:"crash"}]}
+    src = src.replace(/[\u0000-\u001f]/g, (c)->JSON.stringify(c).slice(1,-1)) #escape troublesome characters
     wrappedSrc = "(function(){return "+src+'\n})();'
     errors = []
     try
