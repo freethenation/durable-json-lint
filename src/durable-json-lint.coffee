@@ -2,7 +2,7 @@ esprima = if typeof module == 'undefined' then window.esprima else require('espr
 falafel = if typeof module == 'undefined' then window.falafel else require('free-falafel')
 jsonLint=(src)->
     if !src or /^\s*$/.test(src) then return {json:null, errors:[{lineNumber:1,column:1,description:"An empty string is not valid Json",status:"crash"}]}
-    src = src.replace(/[\u0000-\u001f]/g, (c)->JSON.stringify(c).slice(1,-1)) #escape troublesome characters
+    src = src.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, (c)->JSON.stringify(c).slice(1,-1)) #escape troublesome control characters
     wrappedSrc = "(function(){return "+src+'\n})();'
     errors = []
     try
@@ -19,13 +19,13 @@ jsonLint=(src)->
     literalRegex = /^(?:-?(?=[1-9]|0(?!\d))\d+(\.\d+)?([eE][+-]?\d+)?|true|false|null|"([^"\\]|(?:\\["\\\/bfnrt])|(?:\\u[\][0-9a-f]{4}))*")$/
     commaFixRegex = /,(?=\s*[\]}]\s*$)/
     createError=(node, status, desc)->
-        errors.push({            
+        errors.push({
             lineNumber: node.loc.start.line,
             column: node.loc.start.column,
             description:desc
             status:status
         })
-        if node.loc.start.line == 1 
+        if node.loc.start.line == 1
             errors[errors.length-1].column -= 19
     #add all comments as errors
     for comment in ast.comments
@@ -89,7 +89,7 @@ jsonLint=(src)->
         if node.type == "Property"
             key = node.key
             if node.parent.props[key.correct||key.raw]?
-                node.valid=false    
+                node.valid=false
                 node.correct = ""
                 createError(node, "guessable", "Duplicate key in Json object. The key #{key.correct||key.raw} is already present.")
             else node.parent.props[key.correct||key.raw] = node
@@ -104,9 +104,10 @@ jsonLint=(src)->
             node.update("null")
         return
 
-    # do the processing         
+    # do the processing
     res = falafel(wrappedSrc, {ast:ast}, depthFirstFunc, breadthFirstFunc).toString()
     res = res.substring(19,res.length-6)
+    res = JSON.stringify(JSON.parse(res)) #strip newlines & sanity check
     return {json:res, errors:errors}
 #export
 if typeof module == 'undefined' then window.durableJsonLint = jsonLint else module.exports = jsonLint
